@@ -52,9 +52,17 @@ export function notConvertedLines(rows: readonly NotConverted[]): number {
 export function notConvertedNote(rows: readonly NotConverted[], ratesPending: boolean): string {
   if (ratesPending) return "Some exchange rates are still loading, so totals may be low. Refresh in a minute.";
   if (!rows.length) return "";
-  const amounts = notConvertedLines(rows);
-  const currencies = new Set(rows.map((r) => r.currency || "")).size;
-  return `${amounts.toLocaleString("en-US")} ${amounts === 1 ? "amount" : "amounts"} in ${currencies} ${currencies === 1 ? "currency" : "currencies"} ${amounts === 1 ? "has" : "have"} no exchange rate, so ${amounts === 1 ? "it is" : "they are"} left out of the totals.`;
+  const plural = (n: number, one: string, many: string) => `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
+  const known = rows.filter((r) => r.currency);
+  const noCurrency = notConvertedLines(rows.filter((r) => !r.currency));
+  const parts: string[] = [];
+  if (known.length) {
+    const amounts = notConvertedLines(known);
+    const currencies = new Set(known.map((r) => r.currency)).size;
+    parts.push(`${plural(amounts, "amount", "amounts")} in ${plural(currencies, "currency", "currencies")} ${amounts === 1 ? "has" : "have"} no exchange rate, so ${amounts === 1 ? "it is" : "they are"} left out of the totals.`);
+  }
+  if (noCurrency) parts.push(`${plural(noCurrency, "amount has", "amounts have")} no currency recorded, so ${noCurrency === 1 ? "it is" : "they are"} left out of the totals.`);
+  return parts.join(" ");
 }
 
 /** The rows of the "left out" table: by source, then currency. */

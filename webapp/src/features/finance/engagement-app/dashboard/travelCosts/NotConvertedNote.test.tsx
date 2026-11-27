@@ -36,6 +36,16 @@ describe("NotConvertedNote", () => {
     expect(screen.getByText("1 amount in 1 currency has no exchange rate, so it is left out of the totals.")).toBeTruthy();
   });
 
+  it("reports blank-currency amounts as missing currency, not as a currency", () => {
+    render(<NotConvertedNote rows={[{ source: "card", currency: "", amount: 5, lines: 2 }]} />);
+    expect(screen.getByText("2 amounts have no currency recorded, so they are left out of the totals.")).toBeTruthy();
+  });
+
+  it("keeps known currencies and blank currencies apart", () => {
+    render(<NotConvertedNote rows={[{ source: "card", currency: "EUR", amount: 5, lines: 3 }, { source: "claim", currency: "", amount: 1 }]} />);
+    expect(screen.getByText("3 amounts in 1 currency have no exchange rate, so they are left out of the totals. 1 amount has no currency recorded, so it is left out of the totals.")).toBeTruthy();
+  });
+
   it("shows nothing when there is nothing to say", () => {
     const { container } = render(<NotConvertedNote rows={[]} />);
     expect(container.textContent).toBe("");
