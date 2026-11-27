@@ -29,6 +29,7 @@ const summary: BudgetSummary = {
   totals: { ...fig, budgetUsd: 3200000, leftUsd: 5 },
   unassigned: { spentUsd: 4120.55, tripsWithoutLine: 1, noTripSpendUsd: 0 },
   needsLineCount: 1,
+  unconverted: { count: 0, currencies: [] },
 };
 
 describe("BudgetSummaryTable", () => {
@@ -40,6 +41,27 @@ describe("BudgetSummaryTable", () => {
     expect(screen.getByText("1 travel request")).toBeInTheDocument();
     expect(screen.getByText("Total")).toBeInTheDocument();
     expect(screen.getByText("3,200,000.00")).toBeInTheDocument();
+  });
+
+  it("shows no notice when everything loaded and converted", () => {
+    render(<BudgetSummaryTable summary={summary} />);
+    expect(screen.queryByText(/could not be loaded/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/without an exchange rate/)).not.toBeInTheDocument();
+  });
+
+  it("warns that spent may be low when card expenses and claims could not be loaded", () => {
+    render(<BudgetSummaryTable summary={{ ...summary, expenseAvailable: false }} />);
+    expect(screen.getByText("Card expenses and claims could not be loaded, so spent may be low.")).toBeInTheDocument();
+  });
+
+  it("says how many rows without an exchange rate are left out", () => {
+    render(<BudgetSummaryTable summary={{ ...summary, unconverted: { count: 3, currencies: ["XYZ"] } }} />);
+    expect(screen.getByText("3 rows without an exchange rate are left out of these figures.")).toBeInTheDocument();
+  });
+
+  it("shows the spend with no trip under Unassigned", () => {
+    render(<BudgetSummaryTable summary={{ ...summary, unassigned: { ...summary.unassigned, noTripSpendUsd: 812.4 } }} />);
+    expect(screen.getByText("1 travel request, 812.40 of this is spend with no trip")).toBeInTheDocument();
   });
 
   it("draws a negative Left in the error colour", () => {

@@ -296,7 +296,7 @@ function InfoTab({ t }: { t: TravelRequest }): JSX.Element {
                 <span>{budget.line?.name ?? "Not chosen yet"}</span>
                 {budget.canEdit ? (
                   <Button size="small" onClick={() => setChoosing(true)}>
-                    Change
+                    {budget.line ? "Change" : "Choose"}
                   </Button>
                 ) : null}
               </Stack>

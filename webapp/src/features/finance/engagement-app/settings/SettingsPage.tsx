@@ -340,7 +340,7 @@ function AllocationTypes(): JSX.Element {
           rowKey={(x) => x.id}
           {...tableState(types)}
           actions={(x) => [
-            { label: "Edit", onClick: () => setEditing(x) },
+            { label: "Edit", disabled: budgetsOn && (rules.isPending || budgetLines.isPending), onClick: () => setEditing(x) },
             { label: "Delete", danger: true, onClick: () => setDeleting(x) },
           ]}
           empty={q || typeFilter ? <Empty title="No Allocation Types Match" body="Change the search or the filter to see more." /> : <Empty title="No Allocation Types Yet" body="Add an allocation type to offer it on the engagement forms." />}
@@ -371,7 +371,7 @@ function AllocationTypes(): JSX.Element {
   );
 }
 
-function AllocationTypeDialog({
+export function AllocationTypeDialog({
   type,
   defaultTypeId,
   departments,
@@ -389,6 +389,8 @@ function AllocationTypeDialog({
   const { budgetAdmin } = useEngagementAccess();
   const saveRule = useSaveAllocationTypeRule();
   const [rule, setRule] = useState(ruleValue(budget?.rule));
+  // The rule is sent only when the person changed it, so a rule that was not loaded is never overwritten.
+  const [ruleChanged, setRuleChanged] = useState(false);
   const save = useSaveAllocationType();
   const idem = useIdempotencyKey();
   const notify = useNotifications();
@@ -432,7 +434,7 @@ function AllocationTypeDialog({
                 onClose();
               };
               const id = type?.id ?? String((saved as { id?: number | string } | null)?.id ?? "");
-              if (!budget || !budgetAdmin || !id || rule === ruleValue(budget.rule)) return done();
+              if (!budget || !budgetAdmin || !id || !ruleChanged) return done();
               const line = rule.startsWith("LINE:");
               saveRule.mutate({ allocationTypeId: id, ruleKind: line ? "LINE" : (rule as RuleKind), lineCode: line ? rule.slice(5) : undefined }, { onSuccess: done, onError: setError });
             },
@@ -483,7 +485,10 @@ function AllocationTypeDialog({
             label="Budget Line"
             value={rule}
             disabled={!budgetAdmin}
-            onChange={(e) => setRule(e.target.value)}
+            onChange={(e) => {
+              setRule(e.target.value);
+              setRuleChanged(true);
+            }}
             helperText={budgetAdmin ? undefined : "Only a super admin of both apps can change this."}
           >
             {RULE_KINDS.map(([kind, label]) => (

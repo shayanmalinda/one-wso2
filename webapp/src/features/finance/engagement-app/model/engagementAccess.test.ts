@@ -204,7 +204,7 @@ describe("travel budgets", () => {
     flag(true);
     expect(flags(user([], [35]))).toEqual([false, true, false, false]);
     expect(flags(user([], [4]))).toEqual([false, true, true, false]);
-    expect(flags(user([], [29]))).toEqual([false, false, true, false]);
+    expect(flags(user([], [29]))).toEqual([false, true, true, false]);
   });
 
   it("shows the budget preview to those who allocate or change an allocation status", () => {

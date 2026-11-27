@@ -36,6 +36,7 @@ export default function BudgetPreviewCard({
   endDate,
   value,
   onChange,
+  action = "add",
 }: {
   readonly engagementId: string;
   readonly travellerEmail: string;
@@ -43,7 +44,10 @@ export default function BudgetPreviewCard({
   readonly endDate: string;
   readonly value: number | null;
   readonly onChange: (id: number | null) => void;
+  /** What the person can still do, as the dialog words it: add the allocation, or confirm it (a status change). */
+  readonly action?: "add" | "confirm";
 }): JSX.Element {
+  const still = action === "confirm" ? "You can still confirm it." : "You can still add the allocation.";
   const dates = useDebouncedValue(`${startDate}|${endDate}`, 300);
   const [start, end] = dates.split("|");
   const ok = (a: string, b: string) => DATE.test(a) && DATE.test(b) && b >= a;
@@ -69,7 +73,7 @@ export default function BudgetPreviewCard({
         </Typography>
       ) : preview.isError ? (
         <Typography variant="body2" color="text.secondary">
-          Budget details could not be loaded. You can still add the allocation.
+          {`Budget details could not be loaded. ${still}`}
         </Typography>
       ) : settling || !data ? (
         <DelayedSkeleton minHeight={196}>
@@ -85,6 +89,7 @@ export default function BudgetPreviewCard({
         <Body
           p={data}
           value={value}
+          still={still}
           onPick={(id) => {
             picked.current = true;
             onChange(id);
@@ -95,11 +100,11 @@ export default function BudgetPreviewCard({
   );
 }
 
-function Body({ p, value, onPick }: { p: BudgetPreview; value: number | null; onPick: (id: number | null) => void }): JSX.Element {
+function Body({ p, value, still, onPick }: { p: BudgetPreview; value: number | null; still: string; onPick: (id: number | null) => void }): JSX.Element {
   const left = p.alternatives.find((a) => a.lineId === value)?.leftUsd;
   const isSuggested = value !== null && value === p.suggested?.lineId;
   const typical = p.typicalCost;
-  const country = p.country ?? "";
+  const country = p.country || "this country";
   const warning = value !== null && typical?.usd !== undefined && left !== undefined && (isSuggested ? p.warning : typical.usd > left);
   const facts = [
     isSuggested && p.line && { label: "Budget", value: usd(p.line.budgetUsd) },
@@ -121,7 +126,7 @@ function Body({ p, value, onPick }: { p: BudgetPreview; value: number | null; on
       ) : null}
       <FactsGrid columns={2} facts={facts} />
       {warning && typical?.usd !== undefined && left !== undefined ? (
-        <Alert severity="warning">{`A typical trip to ${country} costs about ${usd(typical.usd)}. This line has ${usd(left)} left. You can still add the allocation.`}</Alert>
+        <Alert severity="warning">{`A typical trip to ${country} costs about ${usd(typical.usd)}. This line has ${usd(left)} left. ${still}`}</Alert>
       ) : null}
     </Box>
   );

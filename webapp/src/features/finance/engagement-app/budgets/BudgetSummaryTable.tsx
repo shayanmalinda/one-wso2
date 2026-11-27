@@ -44,7 +44,10 @@ export default function BudgetSummaryTable({ summary }: { readonly summary?: Bud
         r.kind === "line" ? (
           <Two main={r.line.name} sub={r.line.status === "Retired" ? "Retired" : undefined} />
         ) : r.kind === "unassigned" && summary ? (
-          <Two main="No budget line" sub={plural(summary.unassigned.tripsWithoutLine, "travel request")} />
+          <Two
+            main="No budget line"
+            sub={[plural(summary.unassigned.tripsWithoutLine, "travel request"), summary.unassigned.noTripSpendUsd > 0 ? `${n2(summary.unassigned.noTripSpendUsd)} of this is spend with no trip` : ""].filter(Boolean).join(", ")}
+          />
         ) : null,
     },
     { key: "holder", label: "Budget Holder", render: (r) => (r.kind === "line" ? r.line.holderName || "—" : null) },
@@ -64,6 +67,16 @@ export default function BudgetSummaryTable({ summary }: { readonly summary?: Bud
       {summary?.ratesPending ? (
         <Alert severity="info" sx={{ mb: 1.5 }}>
           Some amounts are still being converted. Refresh in a minute.
+        </Alert>
+      ) : null}
+      {summary && !summary.expenseAvailable ? (
+        <Alert severity="warning" sx={{ mb: 1.5 }}>
+          Card expenses and claims could not be loaded, so spent may be low.
+        </Alert>
+      ) : null}
+      {summary && summary.unconverted.count > 0 ? (
+        <Alert severity="warning" sx={{ mb: 1.5 }}>
+          {`${plural(summary.unconverted.count, "row")} without an exchange rate ${summary.unconverted.count === 1 ? "is" : "are"} left out of these figures.`}
         </Alert>
       ) : null}
       <EaTable

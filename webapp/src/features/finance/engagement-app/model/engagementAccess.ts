@@ -202,7 +202,7 @@ export function engagementAccess(info: UserInfo | undefined): EngagementAccess {
   const allocationTypes = a.has(ALLOC.ALLOCATION_TYPES);
   const budgets = isPreviewEnabled("travelBudgets");
   const budgetAdmin = budgets && bothSuperAdmin && a.has(ALLOC.ROLE_SETTINGS) && t.has(TRAVEL.ROLE_SETTINGS);
-  const travelBudgets = budgetAdmin || (budgets && anyOf(t, TRAVEL.NEW_REQUESTS, TRAVEL.EDIT_STATUS, TRAVEL.EDIT_AGENT, TRAVEL.EDIT_VISA, TRAVEL.VIEW_FUNDING));
+  const travelBudgets = budgetAdmin || (budgets && anyOf(t, TRAVEL.NEW_REQUESTS, TRAVEL.EDIT_STATUS, TRAVEL.EDIT_AGENT, TRAVEL.EDIT_VISA, TRAVEL.ROLE_SETTINGS, TRAVEL.VIEW_FUNDING));
 
   const base = {
     p,

@@ -174,6 +174,8 @@ export interface BudgetSummary {
   readonly totals: LineFigures;
   readonly unassigned: { readonly spentUsd: number; readonly tripsWithoutLine: number; readonly noTripSpendUsd: number };
   readonly needsLineCount: number;
+  /** Rows left out because they have no exchange rate. */
+  readonly unconverted: { readonly count: number; readonly currencies: readonly string[] };
 }
 
 export interface NeedsLineItem {
@@ -241,6 +243,7 @@ export const budgetSummary = (s: WBudgetSummary): BudgetSummary => ({
   totals: figures(s.totals),
   unassigned: s.unassigned,
   needsLineCount: s.needsLineCount,
+  unconverted: { count: s.unconverted?.count ?? 0, currencies: s.unconverted?.currencies ?? [] },
 });
 
 const needsLineItem = (i: WNeedsLineItem): NeedsLineItem => ({

@@ -38,8 +38,8 @@ const preview: BudgetPreview = {
   ratesPending: false,
 };
 
-const draw = (onChange = vi.fn(), value: number | null = null, start = "2027-02-01") => {
-  render(<BudgetPreviewCard engagementId="1" travellerEmail="a@wso2.com" startDate={start} endDate="2027-02-05" value={value} onChange={onChange} />);
+const draw = (onChange = vi.fn(), value: number | null = null, start = "2027-02-01", action?: "add" | "confirm") => {
+  render(<BudgetPreviewCard engagementId="1" travellerEmail="a@wso2.com" startDate={start} endDate="2027-02-05" value={value} onChange={onChange} action={action} />);
   return onChange;
 };
 
@@ -65,6 +65,20 @@ describe("BudgetPreviewCard", () => {
     expect(screen.getByText("A typical trip to Germany costs about USD 2,800. This line has USD 1,950 left. You can still add the allocation.")).toBeInTheDocument();
   });
 
+  it("uses this country when the country is blank", () => {
+    state.q = { data: { ...preview, country: undefined }, isPending: false, isError: false };
+    draw(vi.fn(), 7);
+    expect(screen.getByText("Typical trip to this country")).toBeInTheDocument();
+    expect(screen.getByText(/A typical trip to this country costs about/)).toBeInTheDocument();
+  });
+
+  it("words the warning for a status change when asked to confirm", () => {
+    state.q = { data: preview, isPending: false, isError: false };
+    draw(vi.fn(), 7, "2027-02-01", "confirm");
+    expect(screen.getByText(/This line has USD 1,950 left. You can still confirm it.$/)).toBeInTheDocument();
+    expect(screen.queryByText(/add the allocation/)).not.toBeInTheDocument();
+  });
+
   it("says so when no line could be suggested", () => {
     state.q = { data: { ...preview, suggested: undefined, line: undefined, source: "NONE", warning: false }, isPending: false, isError: false };
     const onChange = draw();
@@ -84,5 +98,11 @@ describe("BudgetPreviewCard", () => {
     const onChange = draw(vi.fn(), 7);
     expect(screen.getByText("Budget details could not be loaded. You can still add the allocation.")).toBeInTheDocument();
     expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it("words the error for a status change when asked to confirm", () => {
+    state.q = { data: undefined, isPending: false, isError: true };
+    draw(vi.fn(), null, "2027-02-01", "confirm");
+    expect(screen.getByText("Budget details could not be loaded. You can still confirm it.")).toBeInTheDocument();
   });
 });

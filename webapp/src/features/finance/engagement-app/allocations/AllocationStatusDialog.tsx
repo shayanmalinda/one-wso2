@@ -95,7 +95,7 @@ export default function AllocationStatusDialog({ allocation, onClose }: { alloca
         </TextField>
         {trip ? (
           <Box sx={{ display: "grid" }}>
-            <BudgetPreviewCard engagementId={a.engagement.id} travellerEmail={a.consultant.email} startDate={a.start} endDate={a.end} value={budgetLine} onChange={setBudgetLine} />
+            <BudgetPreviewCard engagementId={a.engagement.id} travellerEmail={a.consultant.email} startDate={a.start} endDate={a.end} value={budgetLine} onChange={setBudgetLine} action="confirm" />
           </Box>
         ) : null}
         <TextField
