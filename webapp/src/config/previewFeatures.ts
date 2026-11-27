@@ -125,7 +125,15 @@ export type PreviewFeature =
    * under Me → Performance, and the 360° evidence in the Lead View. Held back
    * until the PAR backend's structured 360 endpoints are deployed.
    */
-  | "par2";
+  | "par2"
+  /**
+   * Finance → Engagement App → Travel Budgets: its rail entry, the
+   * `/travel-budgets` routes, the Budget Lines preference, the budget line on
+   * allocations, engagements and travel requests, and every `/budgets` call.
+   * Held back until the budget tables and the backend's budget endpoints are
+   * in production.
+   */
+  | "travelBudgets";
 
 /**
  * Whether a preview feature should be shown.

@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { UserInfo } from "../api/engagementTypes";
 import {
   ALLOC,
@@ -167,5 +167,49 @@ describe("Invoices & Payments without workQueues", () => {
     expect(invoiceSteps(a.p).po).toBe(true);
     expect(a.invoices).toBe(true);
     expect(a.anyFinance).toBe(true);
+  });
+});
+
+describe("travel budgets", () => {
+  const original = window.config;
+  const flag = (on: boolean | undefined) => {
+    window.config = { ...(original ?? {}), ONE_WSO2_PREVIEW_FEATURES: { travelBudgets: on } } as Window["config"];
+  };
+  afterEach(() => {
+    window.config = original;
+  });
+  const flags = (info: UserInfo) => {
+    const a = engagementAccess(info);
+    return [a.budgetAdmin, a.travelBudgets, a.setBudgetLine, a.budgetPreview];
+  };
+  const superAdmin = (allocations: number[], travel: number[]): UserInfo => ({
+    email: "jane@wso2.com",
+    allocations: { privileges: allocations, roles: ["app-allocations-admin-super"] },
+    travel: { privileges: travel, roles: ["app-travel-admin-super"] },
+  });
+
+  it("is off for everyone while the preview feature is off", () => {
+    flag(undefined);
+    expect(flags(superAdmin([6, 16, 23], [1, 4, 5, 6, 29, 35]))).toEqual([false, false, false, false]);
+  });
+
+  it("lets a super admin of both apps with both privileges manage budgets", () => {
+    flag(true);
+    expect(engagementAccess(superAdmin([23], [29])).budgetAdmin).toBe(true);
+    expect(engagementAccess(superAdmin([23], [])).budgetAdmin).toBe(false);
+    expect(engagementAccess({ ...superAdmin([23], [29]), travel: { privileges: [29], roles: [] } }).budgetAdmin).toBe(false);
+  });
+
+  it("lets the Travel Team and Finance view, and only some of them choose a line", () => {
+    flag(true);
+    expect(flags(user([], [35]))).toEqual([false, true, false, false]);
+    expect(flags(user([], [4]))).toEqual([false, true, true, false]);
+    expect(flags(user([], [29]))).toEqual([false, false, true, false]);
+  });
+
+  it("shows the budget preview to those who allocate or change an allocation status", () => {
+    flag(true);
+    for (const id of [6, 16, 20, 21, 32, 33]) expect(engagementAccess(user([id])).budgetPreview).toBe(true);
+    expect(engagementAccess(user([1, 3])).budgetPreview).toBe(false);
   });
 });

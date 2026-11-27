@@ -235,6 +235,7 @@ export function engagementDetail(e: W.WEngagementDetail): V.Engagement {
     ...summary,
     access: e.scope,
     tentativeDates: e.tentativeDates,
+    budgetLine: e.budgetLine ?? undefined,
     accountId: opt(e.accountId),
     opportunityId: opt(e.opportunityId),
     lineItemId: opt(e.opportunityLineItemId),
@@ -334,6 +335,16 @@ export function travelSummary(t: W.WTravelRequestSummary): V.TravelRequestSummar
   };
 }
 
+export const tripBudget = (t: W.WTripBudget): V.TripBudget => ({
+  jobNumber: t.jobNumber,
+  year: t.year ?? undefined,
+  line: t.line ?? undefined,
+  suggested: t.suggested ?? undefined,
+  source: t.source ?? "NONE",
+  needsLine: t.needsLine,
+  canEdit: t.canEdit,
+});
+
 export function travelDetail(t: W.WTravelRequestDetail): V.TravelRequest {
   return {
     ...travelSummary(t),
@@ -351,6 +362,7 @@ export function travelDetail(t: W.WTravelRequestDetail): V.TravelRequest {
       expenses: Boolean(t.tabs.expenses),
     },
     counts: t.counts ?? undefined,
+    budget: t.budget ? tripBudget(t.budget) : undefined,
   };
 }
 

@@ -20,6 +20,7 @@ import { Alert, Box, Button, Card, Stack, Table, TableBody, TableCell, TableHead
 import { PlusIcon } from "@wso2/oxygen-ui-icons-react";
 import RoutedTabs, { type RoutedTabDef } from "@components/routed-tabs/RoutedTabs";
 import { HttpError } from "@api/http";
+import { isPreviewEnabled } from "@config/previewFeatures";
 import { useNotifications } from "@context/notifications/NotificationsContext";
 import type { CardExpense, ExpenseClaim, Invoice, PerDiem, PerDiemPayment, TravelRequest, TripExpenses, TripPayments } from "../api/engagementTypes";
 import { useJobCostSummary, useTravelRequest, useTripExpenses, useTripInvoices, useTripPayments, useTripPerDiems } from "../api/useEngagementApi";
@@ -36,6 +37,7 @@ import { Empty, Failed, ListCard, SectionTitle } from "../components/ListCard";
 import { PersonTwo } from "../components/PersonChip";
 import { ExpenseStatusChip, TravelStatusChip, Two, Mono } from "../components/StatusChips";
 import { engagementPaths, myEngagementPaths, type TravelTab } from "../engagementPaths";
+import SetBudgetLineDialog from "../budgets/SetBudgetLineDialog";
 import { TRAVEL } from "../model/engagementAccess";
 import { useSortedRows } from "../model/useSortedRows";
 import { engagementName, fmtDate, fmtDateTime, fmtRange, money, place } from "../model/format";
@@ -275,6 +277,8 @@ function SectionLoading({ tab }: { tab: TravelTab }): JSX.Element {
 }
 
 function InfoTab({ t }: { t: TravelRequest }): JSX.Element {
+  const [choosing, setChoosing] = useState(false);
+  const budget = isPreviewEnabled("travelBudgets") ? t.budget : undefined;
   return (
     <Box sx={{ pt: 1 }}>
       <FactsGrid
@@ -285,6 +289,19 @@ function InfoTab({ t }: { t: TravelRequest }): JSX.Element {
           t.engagement && { label: "Customer", value: t.engagement.kind === "customer" ? t.engagement.account : "—" },
           { label: "Country", value: t.country },
           { label: "Travel Location", value: t.travelLocation || t.city || "—" },
+          budget && {
+            label: "Budget Line",
+            value: (
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+                <span>{budget.line?.name ?? "Not chosen yet"}</span>
+                {budget.canEdit ? (
+                  <Button size="small" onClick={() => setChoosing(true)}>
+                    Change
+                  </Button>
+                ) : null}
+              </Stack>
+            ),
+          },
           t.funding?.length
             ? {
                 label: "Funding Sources",
@@ -319,6 +336,7 @@ function InfoTab({ t }: { t: TravelRequest }): JSX.Element {
             : null,
         ]}
       />
+      {choosing && budget ? <SetBudgetLineDialog jobNumber={t.jobNumber} year={budget.year} initial={budget.line?.lineId ?? budget.suggested?.lineId} onClose={() => setChoosing(false)} /> : null}
     </Box>
   );
 }

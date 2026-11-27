@@ -35,6 +35,18 @@ export interface AllocationFormState {
   postEngagementEnd: string;
 }
 
+/** The Allocation Statuses that raise a travel request. */
+const TRIP_STATUSES: readonly string[] = ["Confirmed", "Confirmed - Visa Pending"];
+
+/** Whether adding this allocation raises a travel request now: travel is required and, for a customer engagement, it is not tentative, for an internal one its status is a confirmed one. */
+export function willCreateTrip(f: Pick<AllocationFormState, "travel" | "tentative" | "status">, cust: boolean): boolean {
+  return f.travel === "Yes" && (cust ? !f.tentative : TRIP_STATUSES.includes(f.status));
+}
+
+/** Whether moving an allocation to `status` raises its travel request: travel is required, none exists yet, and the status is a confirmed one. */
+export const statusCreatesTrip = (a: { travelRequired: string; travelRequest?: string; travelRaised?: boolean }, status: string): boolean =>
+  a.travelRequired === "Yes" && !a.travelRequest && !a.travelRaised && TRIP_STATUSES.includes(status);
+
 /** The legacy default end: the engagement's end for two weeks or less, else twelve days in. */
 export function defaultEnd(engStart: string, engEnd: string): string {
   const days = Math.round((Date.parse(`${engEnd}T00:00:00Z`) - Date.parse(`${engStart}T00:00:00Z`)) / 86_400_000) + 1;

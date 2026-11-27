@@ -159,6 +159,8 @@ export interface Engagement extends EngagementSummary {
   readonly scope?: string;
   readonly comment?: string;
   readonly tentativeDates?: boolean;
+  /** The travel budget line set on the engagement. */
+  readonly budgetLine?: { readonly code: string; readonly name: string };
   readonly allocations: readonly Allocation[];
   /** What cancelling would change. */
   readonly cascadePreview?: { readonly activeAllocations: number; readonly openTravelRequests: number };
@@ -279,6 +281,16 @@ export interface TravelRequestSummary {
   readonly actions?: TravelActions;
 }
 
+export interface TripBudget {
+  readonly jobNumber: string;
+  readonly year?: number;
+  readonly line?: { readonly lineId: number; readonly name: string };
+  readonly suggested?: { readonly lineId: number; readonly name: string };
+  readonly source: "ENGAGEMENT" | "ALLOCATION_TYPE" | "REGION" | "TEAM" | "NONE";
+  readonly needsLine: boolean;
+  readonly canEdit: boolean;
+}
+
 export interface TravelRequest extends TravelRequestSummary {
   readonly scope: "full" | "agency" | "own";
   readonly visaId?: string;
@@ -291,6 +303,8 @@ export interface TravelRequest extends TravelRequestSummary {
   readonly tabs: { readonly perDiems: boolean; readonly invoices: boolean; readonly travelCards: boolean; readonly payments: boolean; readonly expenses: boolean };
   /** How many rows each tab holds, for the tabs the caller may open. Absent from a backend that does not count them. */
   readonly counts?: { readonly perDiems?: number; readonly invoices?: number; readonly payments?: number; readonly cardExpenses?: number; readonly expenseClaims?: number };
+  /** The travel budget line of the trip, when the caller may see it. */
+  readonly budget?: TripBudget;
 }
 
 export interface PerDiem {

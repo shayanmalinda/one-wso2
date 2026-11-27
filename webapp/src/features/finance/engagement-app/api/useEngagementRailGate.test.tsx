@@ -133,3 +133,29 @@ describe("the engagement adapter", () => {
     expect(claimsForPerspective("finance")).not.toContain("engagement");
   });
 });
+
+describe("the Travel Budgets row", () => {
+  const original = window.config;
+  afterEach(() => {
+    window.config = original;
+  });
+  const flag = (on: boolean) => {
+    window.config = { ...(original ?? {}), ONE_WSO2_PREVIEW_FEATURES: { travelBudgets: on } } as Window["config"];
+  };
+
+  it("shows to the Travel Team and Finance once the preview feature is on", () => {
+    flag(true);
+    state.info.data = user([], [35]);
+    const { result } = renderHook(() => useEngagementRailGate(true));
+    expect(visible(result.current)).toContain(ENGAGEMENT_ITEM.budgets);
+    expect(result.current.canSee(ENGAGEMENT_GROUP_ID)).toBe(true);
+  });
+
+  it("is hidden for everyone while it is off, and its group goes with it", () => {
+    flag(false);
+    state.info.data = user([], [35]);
+    const { result } = renderHook(() => useEngagementRailGate(true));
+    expect(visible(result.current)).not.toContain(ENGAGEMENT_ITEM.budgets);
+    expect(result.current.canSee(ENGAGEMENT_GROUP_ID)).toBe(false);
+  });
+});

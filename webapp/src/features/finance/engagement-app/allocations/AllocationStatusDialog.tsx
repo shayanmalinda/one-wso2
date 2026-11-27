@@ -15,13 +15,16 @@
 // under the License.
 
 import { useState, type JSX } from "react";
-import { MenuItem, Stack, TextField } from "@wso2/oxygen-ui";
+import { Box, MenuItem, Stack, TextField } from "@wso2/oxygen-ui";
 import { useNotifications } from "@context/notifications/NotificationsContext";
 import type { Allocation, AllocationStatus } from "../api/engagementTypes";
 import { useSetAllocationStatus } from "../api/useEngagementMutations";
+import { useEngagementAccess } from "../api/useEngagementUserInfo";
 import EaDialog from "../components/EaDialog";
 import { FactsGrid } from "../components/Facts";
+import { statusCreatesTrip } from "../model/allocationForm";
 import { fmtDate } from "../model/format";
+import BudgetPreviewCard from "../budgets/BudgetPreviewCard";
 import { nextAllocationStatuses } from "../model/statuses";
 
 /** The legacy Update Allocation Status popup: the allocation's facts, the Allocation Status choices the legacy list offered from its current status (no pre-selection), and the comment (255). */
@@ -32,7 +35,10 @@ export default function AllocationStatusDialog({ allocation, onClose }: { alloca
   const [statusError, setStatusError] = useState("");
   const save = useSetAllocationStatus();
   const notify = useNotifications();
+  const { budgetPreview } = useEngagementAccess();
+  const [budgetLine, setBudgetLine] = useState<number | null>(null);
   const a = allocation;
+  const trip = budgetPreview && status !== "" && statusCreatesTrip(a, status);
   return (
     <EaDialog
       title="Update Allocation Status"
@@ -47,7 +53,7 @@ export default function AllocationStatusDialog({ allocation, onClose }: { alloca
         if (!status) return;
         setError(undefined);
         save.mutate(
-          { id: a.id, status, comment },
+          { id: a.id, status, comment, budgetLineId: trip && budgetLine !== null ? budgetLine : undefined },
           {
             onSuccess: () => {
               notify.showSuccess("Allocation status updated successfully");
@@ -87,6 +93,11 @@ export default function AllocationStatusDialog({ allocation, onClose }: { alloca
             </MenuItem>
           ))}
         </TextField>
+        {trip ? (
+          <Box sx={{ display: "grid" }}>
+            <BudgetPreviewCard engagementId={a.engagement.id} travellerEmail={a.consultant.email} startDate={a.start} endDate={a.end} value={budgetLine} onChange={setBudgetLine} />
+          </Box>
+        ) : null}
         <TextField
           size="small"
           label="Comment"

@@ -45,6 +45,8 @@ export function engagementCanSee(itemId: string, access: EngagementAccess): bool
       return access.travelRequests;
     case ENGAGEMENT_ITEM.invoices:
       return access.invoices;
+    case ENGAGEMENT_ITEM.budgets:
+      return access.travelBudgets;
     case ENGAGEMENT_ITEM.reports:
       return access.reports;
     case ENGAGEMENT_ITEM.visas:

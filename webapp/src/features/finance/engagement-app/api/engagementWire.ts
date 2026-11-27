@@ -376,6 +376,8 @@ export interface WEngagementDetail extends WEngagementSummary {
   allocations?: WAllocation[];
   cascadePreview?: { activeAllocations?: number; openTravelRequests?: number };
   tentativeDates?: boolean;
+  /** Internal engagements and marketing events, with the travel budgets feature on. */
+  budgetLine?: { code: string; name: string } | null;
 }
 
 export interface WTimelineItem {
@@ -425,6 +427,17 @@ export interface WTravelRequestActions {
   pushInvoices?: boolean;
 }
 
+export interface WTripBudget {
+  jobNumber: string;
+  year?: number | null;
+  line?: { lineId: number; name: string } | null;
+  suggested?: { lineId: number; name: string } | null;
+  source?: "ENGAGEMENT" | "ALLOCATION_TYPE" | "REGION" | "TEAM" | "NONE";
+  chosenBy?: "USER" | "SYSTEM" | null;
+  needsLine: boolean;
+  canEdit: boolean;
+}
+
 export interface WTravelRequestSummary {
   jobNumber: string;
   status: TravelStatus;
@@ -452,6 +465,8 @@ export interface WTravelRequestDetail extends WTravelRequestSummary {
   fundingSources?: WFundingSource[] | null;
   tabs: { perDiems?: boolean; invoices?: boolean; travelCards?: boolean; payments?: boolean; expenses?: boolean };
   counts?: { perDiems?: number; invoices?: number; payments?: number; cardExpenses?: number; expenseClaims?: number } | null;
+  /** With the travel budgets feature on. */
+  budget?: WTripBudget | null;
 }
 
 export interface WPerDiem {

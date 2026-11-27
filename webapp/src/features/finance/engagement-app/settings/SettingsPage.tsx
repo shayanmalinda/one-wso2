@@ -39,6 +39,8 @@ import { PlusIcon } from "@wso2/oxygen-ui-icons-react";
 import RoutedTabs from "@components/routed-tabs/RoutedTabs";
 import { useNotifications } from "@context/notifications/NotificationsContext";
 import type { AllocationTypeDef, EngagementTypeId } from "../api/engagementTypes";
+import { isPreviewEnabled } from "@config/previewFeatures";
+import { useAllocationTypeRules, useBudgetLines, useSaveAllocationTypeRule, type AllocationTypeRule, type BudgetLine, type RuleKind } from "../api/budgetApi";
 import { useAllocationTypes, useEngagementTypes, useRoleSettings } from "../api/useEngagementApi";
 import { useDeleteAllocationType, useIdempotencyKey, useSaveAllocationType, useSaveRolePrivileges } from "../api/useEngagementMutations";
 import { useEngagementAccess } from "../api/useEngagementUserInfo";
@@ -47,6 +49,8 @@ import EaPage from "../components/EaPage";
 import EaTable, { type Column, tableState } from "../components/EaTable";
 import { Empty, Failed, ListCard, SectionTitle } from "../components/ListCard";
 import ListToolbar from "../components/ListToolbar";
+import { RULE_KINDS, ruleText, ruleValue } from "../budgets/budgetFormat";
+import BudgetLinesSettings from "./BudgetLinesSettings";
 import { Two, Mono } from "../components/StatusChips";
 import { engagementPaths, type SettingsTab } from "../engagementPaths";
 import type { EngagementAccess } from "../model/engagementAccess";
@@ -58,12 +62,14 @@ const LABEL: Record<SettingsTab, string> = {
   "allocation-roles": "Allocation Roles",
   "travel-roles": "Travel Roles",
   "allocation-types": "Allocation Types",
+  "budget-lines": "Budget Lines",
 };
 
 const tabsOf = (a: EngagementAccess): SettingsTab[] => [
   ...(a.allocationTypes ? (["allocation-types"] as const) : []),
   ...(a.allocationRoles ? (["allocation-roles"] as const) : []),
   ...(a.travelRoles ? (["travel-roles"] as const) : []),
+  ...(a.budgetAdmin ? (["budget-lines"] as const) : []),
 ];
 
 export function SettingsIndex(): JSX.Element {
@@ -84,6 +90,8 @@ export default function SettingsPage({ tab }: { tab: SettingsTab }): JSX.Element
           <RoleSettings key="allocations" app="allocations" />
         ) : tab === "travel-roles" ? (
           <RoleSettings key="travel" app="travel" />
+        ) : tab === "budget-lines" ? (
+          <BudgetLinesSettings />
         ) : (
           <AllocationTypes />
         )}
@@ -255,6 +263,9 @@ const titleCase = (x: string) => x.toLowerCase().replace(/(^|[\s\-&/(])([a-z])/g
 function AllocationTypes(): JSX.Element {
   const types = useAllocationTypes();
   const engagementTypes = useEngagementTypes();
+  const budgetsOn = isPreviewEnabled("travelBudgets");
+  const rules = useAllocationTypeRules(budgetsOn);
+  const budgetLines = useBudgetLines(undefined, false, budgetsOn);
   const remove = useDeleteAllocationType();
   const notify = useNotifications();
   const list = useListView("allocation-types");
@@ -285,6 +296,16 @@ function AllocationTypes(): JSX.Element {
     },
     { key: "code", label: "Engagement Code", sortKey: "code", sortValue: (x) => x.code, render: (x) => <Two main={<Mono>{x.code || "—"}</Mono>} sub={x.suffix ? `Suffix ${x.suffix}` : undefined} /> },
     { key: "notify", label: "Notify To Allocations", sortKey: "notify", sortValue: (x) => x.notifyToAllocations, render: (x) => x.notifyToAllocations ?? "—" },
+    ...(budgetsOn
+      ? [
+          {
+            key: "budget",
+            label: "Budget Line",
+            render: (x: AllocationTypeDef) =>
+              rules.isPending || budgetLines.isPending ? <Skeleton variant="text" width={90} sx={{ fontSize: 13 }} /> : ruleText(rules.data?.find((r) => r.allocationTypeId === x.id), budgetLines.data),
+          },
+        ]
+      : []),
   ];
   return (
     <>
@@ -330,6 +351,7 @@ function AllocationTypes(): JSX.Element {
           type={editing === "new" ? undefined : editing}
           defaultTypeId={typeFilter ? (Number(typeFilter) as EngagementTypeId) : 1}
           departments={[...new Set((types.data ?? []).map((x) => x.department).filter((d): d is string => Boolean(d)))].sort()}
+          budget={budgetsOn ? { rule: editing === "new" ? undefined : rules.data?.find((r) => r.allocationTypeId === editing.id), lines: budgetLines.data ?? [] } : undefined}
           onClose={() => setEditing(null)}
         />
       ) : null}
@@ -353,14 +375,20 @@ function AllocationTypeDialog({
   type,
   defaultTypeId,
   departments,
+  budget,
   onClose,
 }: {
   type?: AllocationTypeDef;
   defaultTypeId: EngagementTypeId;
   departments: readonly string[];
+  /** The budget line rule of the type and the lines to pick from, with the feature on. */
+  budget?: { rule?: AllocationTypeRule; lines: readonly BudgetLine[] };
   onClose: () => void;
 }): JSX.Element {
   const engagementTypes = useEngagementTypes();
+  const { budgetAdmin } = useEngagementAccess();
+  const saveRule = useSaveAllocationTypeRule();
+  const [rule, setRule] = useState(ruleValue(budget?.rule));
   const save = useSaveAllocationType();
   const idem = useIdempotencyKey();
   const notify = useNotifications();
@@ -379,7 +407,7 @@ function AllocationTypeDialog({
     <EaDialog
       title={type ? "Edit Allocation Type" : "Add Allocation Type"}
       confirmLabel={type ? "Save Changes" : "Add Allocation Type"}
-      busy={save.isPending}
+      busy={save.isPending || saveRule.isPending}
       error={error}
       onClose={onClose}
       onConfirm={() => {
@@ -398,9 +426,15 @@ function AllocationTypeDialog({
             color: f.color,
           },
           {
-            onSuccess: () => {
-              notify.showSuccess(`Allocation type ${type ? "updated" : "added"} successfully`);
-              onClose();
+            onSuccess: (saved) => {
+              const done = () => {
+                notify.showSuccess(`Allocation type ${type ? "updated" : "added"} successfully`);
+                onClose();
+              };
+              const id = type?.id ?? String((saved as { id?: number | string } | null)?.id ?? "");
+              if (!budget || !budgetAdmin || !id || rule === ruleValue(budget.rule)) return done();
+              const line = rule.startsWith("LINE:");
+              saveRule.mutate({ allocationTypeId: id, ruleKind: line ? "LINE" : (rule as RuleKind), lineCode: line ? rule.slice(5) : undefined }, { onSuccess: done, onError: setError });
             },
             onError: setError,
           },
@@ -442,6 +476,33 @@ function AllocationTypeDialog({
           <MenuItem value="Yes">Yes</MenuItem>
         </TextField>
         <TextField size="small" type="color" label="Color" value={f.color} onChange={set("color")} sx={{ "& input": { height: 28, p: 0.5 } }} />
+        {budget ? (
+          <TextField
+            select
+            size="small"
+            label="Budget Line"
+            value={rule}
+            disabled={!budgetAdmin}
+            onChange={(e) => setRule(e.target.value)}
+            helperText={budgetAdmin ? undefined : "Only a super admin of both apps can change this."}
+          >
+            {RULE_KINDS.map(([kind, label]) => (
+              <MenuItem key={kind} value={kind}>
+                {label}
+              </MenuItem>
+            ))}
+            {rule.startsWith("LINE:") && !budget.lines.some((l) => l.status === "Active" && `LINE:${l.code}` === rule) ? (
+              <MenuItem value={rule}>{ruleText(budget.rule, budget.lines)} (Retired)</MenuItem>
+            ) : null}
+            {budget.lines
+              .filter((l) => l.status === "Active")
+              .map((l) => (
+                <MenuItem key={l.code} value={`LINE:${l.code}`}>
+                  {l.name}
+                </MenuItem>
+              ))}
+          </TextField>
+        ) : null}
       </Box>
     </EaDialog>
   );

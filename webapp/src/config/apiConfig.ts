@@ -2478,6 +2478,14 @@ export const engagementServiceUrls = {
     ea(`/role-settings/${encodeSegment(app)}/roles/${encodeSegment(roleId)}/privileges`),
   allocationTypes: (params?: EngagementQueryParams): string => ea("/settings/allocation-types", params),
   allocationType: (id: string): string => ea(`/settings/allocation-types/${encodeSegment(id)}`),
+  budgetPreview: (params: EngagementQueryParams): string => ea("/budgets/preview", params),
+  budgetSummary: (year?: number): string => ea("/budgets/summary", { year }),
+  budgetLines: (year?: number, includeRetired?: boolean): string => ea("/budgets/lines", { year, includeRetired: includeRetired || undefined }),
+  budgetLine: (id: number): string => ea(`/budgets/lines/${id}`),
+  budgetRules: ea("/budgets/allocation-type-rules"),
+  budgetRule: (allocationTypeId: string): string => ea(`/budgets/allocation-type-rules/${encodeSegment(allocationTypeId)}`),
+  budgetNeedsLine: (params: EngagementQueryParams): string => ea("/budgets/needs-line", params),
+  tripBudgetLine: (job: string): string => ea(`/travel-requests/${encodeSegment(job)}/budget-line`),
 } as const;
 
 export const salesBackendUrl: string = window.config?.ONE_WSO2_REVOPS_BACKEND_URL ?? "";

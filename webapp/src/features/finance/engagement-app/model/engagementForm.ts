@@ -61,6 +61,8 @@ export interface EngagementFormState {
   domain: string;
   scope: string;
   comment: string;
+  /** The travel budget line code of an internal engagement or event; empty for none. */
+  budgetLineCode: string;
 }
 
 export const emptyFunding = (percentage = "100"): FundingRow => ({ region: "", subRegion: "", businessUnit: "", productUnit: "", percentage });
@@ -92,6 +94,7 @@ export function newForm(typeId: EngagementTypeId | 0): EngagementFormState {
     domain: "",
     scope: "",
     comment: "",
+    budgetLineCode: "",
   };
 }
 
@@ -121,6 +124,7 @@ export function formOf(e: Engagement): EngagementFormState {
     domain: e.domain ?? "",
     scope: e.scope ?? "",
     comment: e.comment ?? "",
+    budgetLineCode: e.budgetLine?.code ?? "",
   };
 }
 
@@ -251,6 +255,7 @@ export function inputOf(f: EngagementFormState, allocationTypeId: number | undef
     engagementScope: f.scope || undefined,
     comments: f.comment || undefined,
     tentativeDates: cust ? f.tentative : undefined,
+    budgetLineCode: !cust && f.budgetLineCode ? f.budgetLineCode : undefined,
   };
 }
 
@@ -282,5 +287,7 @@ export function changesOf(orig: EngagementFormState, now: EngagementFormState, a
     if (JSON.stringify(orig[field]) === JSON.stringify(now[field])) continue;
     for (const k of keys) out[k] = full[k];
   }
+  // Clearing the line sends "" (an absent value means no change).
+  if (orig.budgetLineCode !== now.budgetLineCode && !isCustomerForm(now.typeId)) out.budgetLineCode = now.budgetLineCode;
   return out as Partial<EngagementInput>;
 }

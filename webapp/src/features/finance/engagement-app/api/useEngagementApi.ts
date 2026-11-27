@@ -36,7 +36,7 @@ const CACHE_TIME = 30 * MINUTE;
 const FRESH_TIME = MINUTE / 2;
 
 /** One GET against the Engagement App Backend, keyed by `parts`, mapped by `select`. */
-function useEngagementGet<TWire, TView>(
+export function useEngagementGet<TWire, TView>(
   parts: readonly unknown[],
   url: string,
   select: (wire: TWire) => TView,

@@ -15,17 +15,19 @@
 // under the License.
 
 import { useState, type JSX } from "react";
-import { Alert, Box, Checkbox, FormControlLabel, MenuItem, TextField } from "@wso2/oxygen-ui";
+import { Alert, Box, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from "@wso2/oxygen-ui";
 import { useNotifications } from "@context/notifications/NotificationsContext";
 import { defaultOverlapsOf } from "../api/engagementHttp";
 import type { AllocationStatus, Engagement, Person, TimelineItem } from "../api/engagementTypes";
 import { useCreateAllocation, useIdempotencyKey, type AllocationInput } from "../api/useEngagementMutations";
+import { useEngagementAccess } from "../api/useEngagementUserInfo";
 import EaDialog from "../components/EaDialog";
 import SearchSelect from "../components/SearchSelect";
 import { isPaidType } from "../model/engagementAccess";
 import { addDays, fmtRange } from "../model/format";
-import { defaultEnd, validateAllocation, type AllocationFormState } from "../model/allocationForm";
+import { defaultEnd, validateAllocation, willCreateTrip, type AllocationFormState } from "../model/allocationForm";
 import { INTERNAL_START_STATUSES } from "../model/statuses";
+import BudgetPreviewCard from "../budgets/BudgetPreviewCard";
 
 /** Add New Allocation (AddNewAllocationPopup.js), for one consultant on one engagement: the legacy fields in the legacy order. */
 export default function AllocationDialog({
@@ -61,6 +63,9 @@ export default function AllocationDialog({
     postEngagementEnd: addDays(defaultEnd(e.start, e.end), 2),
   });
   const [error, setError] = useState<unknown>();
+  const { budgetPreview } = useEngagementAccess();
+  const [budgetLine, setBudgetLine] = useState<number | null>(null);
+  const trip = willCreateTrip(f, cust);
   const create = useCreateAllocation();
   const idem = useIdempotencyKey();
   // Default allocations the backend would trim or split: asked once, then resent with the go-ahead.
@@ -110,6 +115,7 @@ export default function AllocationDialog({
           preparationStart: f.preparation ? f.preparationStart : undefined,
           postEngagementEnd: f.postEngagement ? f.postEngagementEnd : undefined,
           trimDefaultAllocations: trim.length ? true : undefined,
+          budgetLineId: budgetPreview && trip && budgetLine !== null ? budgetLine : undefined,
         };
         create.mutate(
           { engagementId: e.id, body, idempotencyKey: idem.key },
@@ -171,6 +177,13 @@ export default function AllocationDialog({
           <MenuItem value="No">No</MenuItem>
         </TextField>
         {!needsStatus ? <span /> : null}
+        {budgetPreview && trip ? (
+          <BudgetPreviewCard engagementId={e.id} travellerEmail={consultant.email} startDate={f.start} endDate={f.end} value={budgetLine} onChange={setBudgetLine} />
+        ) : budgetPreview && f.travel === "Yes" ? (
+          <Typography variant="caption" color="text.secondary" sx={{ gridColumn: "1 / -1", mt: -1 }}>
+            The budget line is chosen when the allocation is confirmed.
+          </Typography>
+        ) : null}
         <TextField
           size="small"
           label="Comment"

@@ -34,7 +34,8 @@ export type InvoicesTab =
   | "all-payments";
 export type ReportsTab = "consultant-allocations" | "invoices" | "per-diem-payments";
 export type DocumentsTab = "visas" | "documents";
-export type SettingsTab = "allocation-roles" | "travel-roles" | "allocation-types";
+export type BudgetsTab = "overview" | "needs-a-line";
+export type SettingsTab = "allocation-roles" | "travel-roles" | "allocation-types" | "budget-lines";
 
 const withQuery = (path: string, query?: Record<string, string | undefined>): string => {
   if (!query) return path;
@@ -67,6 +68,8 @@ export const engagementPaths = {
     `${A}/travel-requests/${encodeURIComponent(jobNumber)}/${tab}`,
   invoices: (tab?: InvoicesTab, query?: Record<string, string | undefined>): string =>
     withQuery(tab ? `${A}/invoices/${tab}` : `${A}/invoices`, query),
+  budgets: (tab?: BudgetsTab, query?: Record<string, string | undefined>): string =>
+    withQuery(tab ? `${A}/travel-budgets/${tab}` : `${A}/travel-budgets`, query),
   search: (q?: string): string => withQuery(`${A}/search`, { q }),
   reports: (tab?: ReportsTab): string => (tab ? `${A}/reports/${tab}` : `${A}/reports`),
   documents: (tab?: DocumentsTab): string => (tab ? `${A}/visas-documents/${tab}` : `${A}/visas-documents`),

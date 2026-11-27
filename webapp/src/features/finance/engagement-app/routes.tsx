@@ -47,6 +47,9 @@ const TravelRequestPage = lazy(travelRequestModule);
 const invoicesModule = () => import("./invoices/InvoicesPage");
 const InvoicesPage = lazy(invoicesModule);
 const InvoicesIndex = lazy(() => invoicesModule().then((m) => ({ default: m.InvoicesIndex })));
+const budgetsModule = () => import("./budgets/TravelBudgetsPage");
+const TravelBudgetsPage = lazy(budgetsModule);
+const TravelBudgetsIndex = lazy(() => budgetsModule().then((m) => ({ default: m.TravelBudgetsIndex })));
 const reportsModule = () => import("./reports/ReportsPage");
 const ReportsPage = lazy(reportsModule);
 const ReportsIndex = lazy(() => reportsModule().then((m) => ({ default: m.ReportsIndex })));
@@ -71,6 +74,7 @@ const PRELOAD: readonly (readonly [RegExp, () => Promise<unknown>])[] = [
   [new RegExp(`${ENGAGEMENT_APP_PATH}/travel-requests/(new|in-progress|completed|all)/?$`), travelModule],
   [new RegExp(`(${ENGAGEMENT_APP_PATH}|/me)/travel-requests/[^/]+/`), travelRequestModule],
   [new RegExp(`${ENGAGEMENT_APP_PATH}/invoices/`), invoicesModule],
+  [new RegExp(`${ENGAGEMENT_APP_PATH}/travel-budgets/`), budgetsModule],
   [new RegExp(`${ENGAGEMENT_APP_PATH}/reports/`), reportsModule],
   [new RegExp(`(${ENGAGEMENT_APP_PATH}/visas-documents|/me/passport-visas)/`), documentsModule],
   [new RegExp(`${ENGAGEMENT_APP_PATH}/settings/`), settingsModule],
@@ -130,6 +134,10 @@ export const engagementRoutes = (
       <Route key={tab} path={`invoices/${tab}`} element={gated("invoices", <InvoicesPage tab={tab} />)} />
     ))}
 
+    <Route path="travel-budgets" element={gated("travelBudgets", <TravelBudgetsIndex />)} />
+    <Route path="travel-budgets/overview" element={gated("travelBudgets", <TravelBudgetsPage tab="overview" />)} />
+    <Route path="travel-budgets/needs-a-line" element={gated("travelBudgets", <TravelBudgetsPage tab="needs-a-line" />)} />
+
     <Route path="search" element={gated("anyFinance", <SearchPage />)} />
 
     <Route path="reports" element={gated("reports", <ReportsIndex />)} />
@@ -142,7 +150,7 @@ export const engagementRoutes = (
     <Route path="visas-documents/documents" element={gated("visasDocuments", <DocumentsPage own={false} tab="documents" />)} />
 
     <Route path="settings" element={gated("settings", <SettingsIndex />)} />
-    {(["allocation-roles", "travel-roles", "allocation-types"] as const).map((tab) => (
+    {(["allocation-roles", "travel-roles", "allocation-types", "budget-lines"] as const).map((tab) => (
       <Route key={tab} path={`settings/${tab}`} element={gated("settings", <SettingsPage tab={tab} />)} />
     ))}
 

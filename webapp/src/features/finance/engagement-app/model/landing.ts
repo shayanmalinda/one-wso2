@@ -26,6 +26,7 @@ export function firstFinanceScreen(access: EngagementAccess): string {
   if (access.allocations) return engagementPaths.allocations();
   if (access.travelRequests) return engagementPaths.travelRequests();
   if (access.invoices) return engagementPaths.invoices();
+  if (access.travelBudgets) return engagementPaths.budgets();
   if (access.reports) return engagementPaths.reports();
   if (access.visasDocuments) return engagementPaths.documents();
   return engagementPaths.settings();

@@ -29,6 +29,7 @@ import {
   StampIcon,
   TableIcon,
   UsersIcon,
+  WalletIcon,
 } from "@wso2/oxygen-ui-icons-react";
 import type { MenuApp } from "@constants/appMenu";
 import { engagementPaths, myEngagementPaths } from "@features/finance/engagement-app/engagementPaths";
@@ -43,6 +44,7 @@ export const ENGAGEMENT_ITEM = {
   allocations: "finance-ea-allocations",
   travelRequests: "finance-ea-travel-requests",
   invoices: "finance-ea-invoices",
+  budgets: "finance-ea-travel-budgets",
   reports: "finance-ea-reports",
   visas: "finance-ea-visas",
   settings: "finance-ea-settings",
@@ -68,6 +70,7 @@ export const ENGAGEMENT_APPS: readonly MenuApp[] = [
       { id: ENGAGEMENT_ITEM.allocations, label: "Allocations", icon: UsersIcon, desc: "Engagement allocations and team allocations.", requires: ["admin"], path: engagementPaths.allocations() },
       { id: ENGAGEMENT_ITEM.travelRequests, label: "Travels", icon: PlaneIcon, desc: "Travel requests from confirmed allocations.", requires: ["admin"], path: engagementPaths.travelRequests() },
       { id: ENGAGEMENT_ITEM.invoices, label: "Invoices & Payments", icon: ReceiptIcon, desc: "Travel invoices and per diem payments, with their approval and NetSuite status.", requires: ["admin"], path: engagementPaths.invoices() },
+      { id: ENGAGEMENT_ITEM.budgets, label: "Travel Budgets", icon: WalletIcon, desc: "Travel spend against each budget line for the year.", requires: ["admin"], path: engagementPaths.budgets() },
       { id: ENGAGEMENT_ITEM.reports, label: "Reports", icon: TableIcon, desc: "Consultant allocations, travel invoices and per diem payments, with Export CSV.", requires: ["admin"], path: engagementPaths.reports() },
       { id: ENGAGEMENT_ITEM.visas, label: "Visas & Documents", icon: StampIcon, desc: "Employees' visas and travel documents.", requires: ["admin"], path: engagementPaths.documents() },
       { id: ENGAGEMENT_ITEM.settings, label: "Preferences", icon: SettingsIcon, desc: "Role privileges and allocation types.", requires: ["admin"], path: engagementPaths.settings() },

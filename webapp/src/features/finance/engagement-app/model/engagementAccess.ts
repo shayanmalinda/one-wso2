@@ -16,6 +16,7 @@
 
 // What the legacy privileges open, per screen.
 
+import { isPreviewEnabled } from "@config/previewFeatures";
 import type { EngagementTypeId, UserInfo } from "../api/engagementTypes";
 
 /** Allocations app privilege ids. */
@@ -155,6 +156,11 @@ export interface EngagementAccess {
   readonly allocationRoles: boolean;
   readonly travelRoles: boolean;
   readonly allocationTypes: boolean;
+  /** Preview feature `travelBudgets`: Travel Budgets, the budget line pickers and the Budget Lines preference. */
+  readonly budgetAdmin: boolean;
+  readonly travelBudgets: boolean;
+  readonly setBudgetLine: boolean;
+  readonly budgetPreview: boolean;
   readonly myTravelRequests: boolean;
   readonly myDocuments: boolean;
   readonly myVisas: boolean;
@@ -194,6 +200,9 @@ export function engagementAccess(info: UserInfo | undefined): EngagementAccess {
   const allocationRoles = bothSuperAdmin && a.has(ALLOC.ROLE_SETTINGS);
   const travelRoles = bothSuperAdmin && t.has(TRAVEL.ROLE_SETTINGS);
   const allocationTypes = a.has(ALLOC.ALLOCATION_TYPES);
+  const budgets = isPreviewEnabled("travelBudgets");
+  const budgetAdmin = budgets && bothSuperAdmin && a.has(ALLOC.ROLE_SETTINGS) && t.has(TRAVEL.ROLE_SETTINGS);
+  const travelBudgets = budgetAdmin || (budgets && anyOf(t, TRAVEL.NEW_REQUESTS, TRAVEL.EDIT_STATUS, TRAVEL.EDIT_AGENT, TRAVEL.EDIT_VISA, TRAVEL.VIEW_FUNDING));
 
   const base = {
     p,
@@ -221,10 +230,14 @@ export function engagementAccess(info: UserInfo | undefined): EngagementAccess {
     visasDocuments: visas || documents,
     visas,
     documents,
-    settings: allocationRoles || travelRoles || allocationTypes,
+    settings: allocationRoles || travelRoles || allocationTypes || budgetAdmin,
     allocationRoles,
     travelRoles,
     allocationTypes,
+    budgetAdmin,
+    travelBudgets,
+    setBudgetLine: budgets && anyOf(t, TRAVEL.NEW_REQUESTS, TRAVEL.EDIT_STATUS, TRAVEL.EDIT_AGENT, TRAVEL.EDIT_VISA, TRAVEL.ROLE_SETTINGS),
+    budgetPreview: budgets && anyOf(a, ALLOC.ALLOCATE_PAID, ALLOC.ALLOCATE_INTERNAL, ALLOC.INTERNAL_ALLOCATION_STATUS, ALLOC.TEAM_ALLOCATIONS, ALLOC.ALLOCATE_POST_SALE, ALLOC.ALLOCATE_PRE_SALE),
     myTravelRequests: anyOf(t, TRAVEL.MY_TRAVEL_REQUESTS, TRAVEL.VIEW_OWN_REQUEST),
     myDocuments: t.has(TRAVEL.VIEW_OWN_DOCUMENT),
     myVisas: t.has(TRAVEL.VIEW_OWN_VISA),
@@ -235,7 +248,7 @@ export function engagementAccess(info: UserInfo | undefined): EngagementAccess {
   // employee's Dashboard would hold nothing that Me does not already cover, so the Engagement App stays out of their
   // Finance menu. Agents get their own dashboard.
   const otherFinance =
-    base.approvals || base.engagements || base.allocations || base.travelRequests || base.invoices || base.reports || base.visasDocuments || base.settings;
+    base.approvals || base.engagements || base.allocations || base.travelRequests || base.invoices || base.travelBudgets || base.reports || base.visasDocuments || base.settings;
   const access = { ...base, dashboard: isAgent || (a.has(ALLOC.DASHBOARD) && otherFinance) };
   return {
     ...access,
@@ -246,6 +259,7 @@ export function engagementAccess(info: UserInfo | undefined): EngagementAccess {
       access.allocations ||
       access.travelRequests ||
       access.invoices ||
+      access.travelBudgets ||
       access.reports ||
       access.visasDocuments ||
       access.settings,

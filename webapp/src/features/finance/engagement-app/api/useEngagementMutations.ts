@@ -55,7 +55,7 @@ const idem = (key: string | undefined): Record<string, string> | undefined => (k
 /** Reports and search read the same records every write changes, so every write refreshes them too. */
 const EVERYWHERE: readonly Parts[] = [["reports"], ["search"]];
 
-function useEngagementMutation<V, R = unknown>(run: (vars: V, token: string) => Promise<R>, affects: (vars: V) => readonly Parts[]) {
+export function useEngagementMutation<V, R = unknown>(run: (vars: V, token: string) => Promise<R>, affects: (vars: V) => readonly Parts[]) {
   const { getToken, key } = useEngagementBasis();
   const queryClient = useQueryClient();
   return useMutation<R, Error, V>({
@@ -92,6 +92,8 @@ export interface EngagementInput {
   readonly engagementScope?: string;
   readonly comments?: string;
   readonly tentativeDates?: boolean;
+  /** Internal engagements and marketing events: the travel budget line code, or "" to clear it. */
+  readonly budgetLineCode?: string;
 }
 
 const ENGAGEMENT_AFFECTS: readonly Parts[] = [["engagements"], ["approvals"], ["dashboard"]];
@@ -112,7 +114,7 @@ export interface EngagementChange {
   readonly approve?: boolean;
 }
 
-const ENGAGEMENT_ALL: readonly Parts[] = [...ENGAGEMENT_AFFECTS, ["allocations"], ["team-allocations"], ["travel-requests"], ["me"]];
+const ENGAGEMENT_ALL: readonly Parts[] = [...ENGAGEMENT_AFFECTS, ["budgets"], ["allocations"], ["team-allocations"], ["travel-requests"], ["me"]];
 
 export const useUpdateEngagement = () =>
   useEngagementMutation(
@@ -152,9 +154,11 @@ export interface AllocationInput {
   readonly postEngagementEnd?: string;
   /** Confirms trimming or splitting the default allocations a 409 named. */
   readonly trimDefaultAllocations?: boolean;
+  /** The travel budget line chosen in the preview card. Sent only when the allocation creates a travel request. */
+  readonly budgetLineId?: number;
 }
 
-const ALLOCATION_AFFECTS: readonly Parts[] = [["engagements"], ["allocations"], ["team-allocations"], ["travel-requests"], ["dashboard"], ["me"]];
+const ALLOCATION_AFFECTS: readonly Parts[] = [["budgets"], ["engagements"], ["allocations"], ["team-allocations"], ["travel-requests"], ["dashboard"], ["me"]];
 
 export const useCreateAllocation = () =>
   useEngagementMutation(
@@ -165,8 +169,8 @@ export const useCreateAllocation = () =>
 
 export const useSetAllocationStatus = () =>
   useEngagementMutation(
-    ({ id, status, comment }: { id: string; status: ClearanceStatus; comment?: string }, token) =>
-      authedPatch<unknown>(urls.allocationStatus(id), token, { clearanceStatus: status, comment }),
+    ({ id, status, comment, budgetLineId }: { id: string; status: ClearanceStatus; comment?: string; budgetLineId?: number }, token) =>
+      authedPatch<unknown>(urls.allocationStatus(id), token, { clearanceStatus: status, comment, budgetLineId }),
     () => ALLOCATION_AFFECTS,
   );
 
@@ -228,7 +232,7 @@ export interface TravelRequestChange {
   readonly visa?: string;
 }
 
-const TRAVEL_AFFECTS: readonly Parts[] = [["travel-requests"], ["invoices"], ["per-diem-payments"], ["ns-sync-failures"], ["engagements"], ["allocations"], ["dashboard"], ["me"]];
+const TRAVEL_AFFECTS: readonly Parts[] = [["budgets"], ["travel-requests"], ["invoices"], ["per-diem-payments"], ["ns-sync-failures"], ["engagements"], ["allocations"], ["dashboard"], ["me"]];
 
 export const useUpdateTravelRequest = () =>
   useEngagementMutation(

@@ -36,7 +36,9 @@ import {
 import { LockIcon, PlusIcon, XIcon } from "@wso2/oxygen-ui-icons-react";
 import { useDebouncedValue } from "@hooks/useDebouncedValue";
 import type { Campaign, ReferenceData, SalesforceAccount } from "../api/engagementTypes";
+import { useBudgetLines } from "../api/budgetApi";
 import { useAccounts, useCampaigns } from "../api/useEngagementApi";
+import BudgetLinePicker from "../budgets/BudgetLinePicker";
 import { TABLE_HEAD_SX } from "../components/eaStyles";
 import SearchSelect from "../components/SearchSelect";
 import { emptyFunding, type FundingRow } from "../model/engagementForm";
@@ -241,6 +243,22 @@ export function CampaignField({
           helperText={error ?? (value ? `Campaign ID ${value.id}` : undefined)}
         />
       )}
+    />
+  );
+}
+
+/** Internal engagements and marketing events: the travel budget line every trip on the engagement uses. Optional. */
+export function BudgetLineField({ value, onChange }: { value: string; onChange: (code: string) => void }): JSX.Element {
+  const lines = useBudgetLines();
+  const active = (lines.data ?? []).filter((l) => l.status === "Active");
+  return (
+    <BudgetLinePicker
+      label="Travel Budget Line"
+      value={active.find((l) => l.code === value)?.id ?? null}
+      disabled={lines.isPending}
+      lines={active.map((l) => ({ id: l.id, name: l.name }))}
+      onChange={(id) => onChange(active.find((l) => l.id === id)?.code ?? "")}
+      helperText="Every trip on this engagement uses this line. Leave empty to let the allocation type decide."
     />
   );
 }

@@ -243,6 +243,7 @@ function DetailsTab({ e }: { e: Engagement }): JSX.Element {
           e.kind !== "marketing" && { label: "Business Unit", value: e.businessUnit },
           e.kind !== "marketing" && { label: "Product Unit", value: e.productUnit },
           e.kind !== "marketing" && { label: "Sales Sub Region", value: e.subRegion },
+          e.budgetLine && { label: "Travel Budget Line", value: e.budgetLine.name },
           { label: "Customer Contact", value: e.contact },
           { label: "Business Domain", value: e.domain },
           { label: "Opportunity Owner", value: e.opportunityOwner },

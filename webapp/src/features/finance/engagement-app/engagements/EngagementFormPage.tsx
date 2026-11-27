@@ -18,6 +18,7 @@ import { useState, type JSX, type ReactNode } from "react";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 import { Alert, Box, Button, Card, Checkbox, FormControlLabel, Skeleton, TextField, Typography } from "@wso2/oxygen-ui";
 import { describeError } from "@api/errors";
+import { isPreviewEnabled } from "@config/previewFeatures";
 import { useNotifications } from "@context/notifications/NotificationsContext";
 import type { Engagement, EngagementTypeId } from "../api/engagementTypes";
 import { useCreateEngagement, useIdempotencyKey, useUpdateEngagement } from "../api/useEngagementMutations";
@@ -48,7 +49,7 @@ import { HttpError } from "@api/http";
 import { CheckIcon } from "@wso2/oxygen-ui-icons-react";
 import { eaError } from "../api/engagementHttp";
 import { useUnsavedGuard } from "../components/useUnsavedGuard";
-import { AccountSearchField, CampaignField, FundingSourcesField, LabelWithLock, SelectField } from "./formFields";
+import { AccountSearchField, BudgetLineField, CampaignField, FundingSourcesField, LabelWithLock, SelectField } from "./formFields";
 
 /** Create Customer Engagement, or Create Internal Engagement / Marketing Event. */
 export function CreateEngagementPage(): JSX.Element {
@@ -445,6 +446,11 @@ function EngagementForm({
                 onChange={(v) => set("country", v)}
               />
               <Full>{area("address", "Location Address", 3, { required: true, max: 300 })}</Full>
+              {!cust && isPreviewEnabled("travelBudgets") ? (
+                <Full>
+                  <BudgetLineField value={f.budgetLineCode} onChange={(code) => set("budgetLineCode", code)} />
+                </Full>
+              ) : null}
               {!mkt ? (
                 <>
                   <SelectField
